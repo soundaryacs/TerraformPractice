@@ -1,0 +1,5 @@
+aws_region = ""
+ami_id = ""
+aws_instance_type = ""
+instance_name = ""
+s3_bucket = ""
