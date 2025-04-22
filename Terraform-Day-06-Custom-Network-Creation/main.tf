@@ -17,7 +17,7 @@ resource "aws_internet_gateway" "test" {
 resource "aws_subnet" "public" {
   cidr_block = "10.0.0.0/24"
   vpc_id = aws_vpc.test.id
-  map_public_ip_on_launch = true
+#   map_public_ip_on_launch = true
   availability_zone = "us-east-1a"
   tags = {
     Name= "Public Subnet"
@@ -97,11 +97,53 @@ resource "aws_instance" "test" {
   subnet_id                   = aws_subnet.public.id
   vpc_security_group_ids      = [aws_security_group.test.id]
   key_name                    = "us-region-cust-key" 
-  associate_public_ip_address = true
+#   associate_public_ip_address = true
 
   tags = {
     Name = "Test Server"
   }
 }
+
+# Task Create NAT Gateway and connected to private subnet
+resource "aws_eip" "nat_eip" {
+  vpc = true
+}
+
+
+# NAT gate way 
+resource "aws_nat_gateway" "nat" {
+  allocation_id = aws_eip.nat_eip.id
+  subnet_id     = aws_subnet.public.id
+
+  tags = {
+    Name = "NAT Gateway"
+  }
+
+  depends_on = [aws_internet_gateway.test]
+}
+
+# Private route table for private subnet
+resource "aws_route_table" "private" {
+  vpc_id = aws_vpc.test.id
+
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.nat.id
+  }
+
+  tags = {
+    Name = "Private Route Table"
+  }
+}
+
+# Associate Route Table for private subnet
+
+resource "aws_route_table_association" "private" {
+  subnet_id      = aws_subnet.private.id
+  route_table_id = aws_route_table.private.id
+}
+
+
+
 
 
